@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { verifyFingerprint, getWebAuthnErrorMessage } from './webauthn';
 
@@ -34,18 +34,34 @@ export default function StudentPortal({ onBack }) {
   const [selected, setSelected] = useState(null);
   const [receipt, setReceipt] = useState('');
   const [votedFor, setVotedFor] = useState('');
+  const [hasSensor, setHasSensor] = useState(null);
 
-  const startBiometric = async () => {
+  useEffect(() => {
+    // Auto-detect if device has biometric sensor
+    if (window.PublicKeyCredential) {
+      window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+        .then(result => setHasSensor(result))
+        .catch(() => setHasSensor(false));
+    } else {
+      setHasSensor(false);
+    }
+  }, []);
+
+  const startBiometric = async (method) => {
     if (!uid) { setStatus({ msg: '⚠️ Please enter your Student UID', type: 'error' }); return; }
     if (!isValidUID(uid)) { setStatus({ msg: '❌ Invalid UID. Only registered AMU students can vote.', type: 'error' }); return; }
 
-    setStatus({ msg: '🔐 Place your finger on the scanner...', type: 'success' });
+    if (method === 'qr') {
+      setStatus({ msg: '📱 A QR code will appear — scan it with your phone to verify', type: 'success' });
+    } else {
+      setStatus({ msg: '🔐 Place your finger or look at camera...', type: 'success' });
+    }
     setScanning(true);
 
     try {
-      // Verify fingerprint linked to this UID
+      // WebAuthn handles QR automatically when no platform sensor
       await verifyFingerprint(uid);
-      setStatus({ msg: '✅ Fingerprint matched! Loading your details...', type: 'success' });
+      setStatus({ msg: '✅ Biometric matched! Loading your details...', type: 'success' });
 
       const res = await axios.post(`${BACKEND}/students/verify`, { studentID: uid, biometricID: 'BIO001' });
       setScanning(false);
@@ -123,6 +139,7 @@ export default function StudentPortal({ onBack }) {
           {step === 1 && (
             <div className="card">
               {status && <div className={`status-msg status-${status.type}`}>{status.msg}</div>}
+
               <label className="input-label">🪪 Student UID</label>
               <input
                 className="input-field"
@@ -132,23 +149,62 @@ export default function StudentPortal({ onBack }) {
                 value={uid}
                 onChange={e => { setUid(e.target.value); setStatus(null); }}
               />
+
+              {/* Device detection hint */}
+              {hasSensor !== null && !status && (
+                <div className={`webauthn-notice ${hasSensor ? 'success' : 'info'}`}>
+                  {hasSensor
+                    ? '✅ Biometric sensor detected on this device'
+                    : '📱 No sensor detected — use phone QR to verify'}
+                </div>
+              )}
+
               {!scanning ? (
                 <>
                   <p style={{ fontSize: '0.78rem', color: '#b06080', marginBottom: '14px', textAlign: 'center' }}>
-                    Verify your identity using your registered biometric
+                    Choose your verification method
                   </p>
-                  <button className="bio-btn btn-finger" onClick={startBiometric}>
+
+                  {/* Always show fingerprint and face options */}
+                  <button className="bio-btn btn-finger" onClick={() => startBiometric('finger')}>
                     👆 Scan Fingerprint
+                    <span style={{ fontSize: '0.72rem', opacity: 0.8 }}>(Android / Laptop)</span>
                   </button>
+
                   <div className="or-div">or</div>
-                  <button className="bio-btn btn-face" onClick={startBiometric}>
+
+                  <button className="bio-btn btn-face" onClick={() => startBiometric('face')}>
                     🔍 Face ID
+                    <span style={{ fontSize: '0.72rem', opacity: 0.8 }}>(iPhone / Windows Hello)</span>
                   </button>
+
+                  {/* QR option for devices without sensor */}
+                  {hasSensor === false && (
+                    <>
+                      <div className="or-div">or</div>
+                      <button className="bio-btn" onClick={() => startBiometric('qr')}
+                        style={{ background: 'linear-gradient(135deg, #7b61ff, #4a90d9)', color: 'white' }}>
+                        📱 Scan QR with Phone
+                        <span style={{ fontSize: '0.72rem', opacity: 0.8 }}>(No sensor on this device)</span>
+                      </button>
+                    </>
+                  )}
+
+                  <div className="webauthn-info" style={{ marginTop: '16px' }}>
+                    <div className="webauthn-info-row">📱 <span><strong>Phone/Tablet:</strong> Fingerprint or Face unlock</span></div>
+                    <div className="webauthn-info-row">💻 <span><strong>Laptop:</strong> Built-in scanner or Windows Hello</span></div>
+                    <div className="webauthn-info-row">🖥️ <span><strong>Desktop/PC:</strong> QR code → scan with phone</span></div>
+                  </div>
                 </>
               ) : (
                 <div className="scanning">
-                  <div className="scan-ring">👆</div>
-                  <p style={{ color: '#b06080', fontSize: '0.85rem' }}>Scanning... Check your device for the prompt</p>
+                  <div className="scan-ring">🔐</div>
+                  <p style={{ color: '#b06080', fontSize: '0.85rem' }}>
+                    Waiting for biometric verification...
+                  </p>
+                  <p style={{ color: '#c0a0b0', fontSize: '0.75rem', marginTop: '8px' }}>
+                    Check your device — a prompt or QR code may appear
+                  </p>
                 </div>
               )}
             </div>

@@ -11,11 +11,13 @@ export async function isEnrolled(uid) {
   return !!localStorage.getItem(getCredKey(uid));
 }
 
+export async function hasбиometricSensor() {
+  if (!window.PublicKeyCredential) return false;
+  return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+}
+
 export async function enrollFingerprint(uid) {
   if (!window.PublicKeyCredential) throw new Error('WebAuthn not supported. Use Chrome, Safari or Edge.');
-
-  const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-  if (!available) throw new Error('No biometric sensor found on this device.');
 
   const challenge = window.crypto.getRandomValues(new Uint8Array(32));
 
@@ -33,7 +35,7 @@ export async function enrollFingerprint(uid) {
         { type: 'public-key', alg: -257 },
       ],
       authenticatorSelection: {
-        authenticatorAttachment: 'platform',
+        // No authenticatorAttachment restriction — allows both platform AND cross-device (QR)
         userVerification: 'required',
         requireResidentKey: false,
       },
@@ -65,7 +67,7 @@ export async function verifyFingerprint(uid) {
       allowCredentials: [{
         type: 'public-key',
         id: credIdBytes,
-        transports: ['internal'],
+        transports: ['internal', 'hybrid'], // hybrid = cross-device via QR
       }],
     }
   });
@@ -74,7 +76,7 @@ export async function verifyFingerprint(uid) {
 }
 
 export function getWebAuthnErrorMessage(err) {
-  if (err.message === 'NOT_ENROLLED') return '❌ No fingerprint registered for this UID. Please enroll first.';
+  if (err.message === 'NOT_ENROLLED') return '❌ No biometric registered for this UID.';
   switch (err.name) {
     case 'NotAllowedError': return '❌ Biometric cancelled or timed out. Please try again.';
     case 'NotSupportedError': return '⚠️ Biometric not supported. Use Chrome, Safari or Edge.';
