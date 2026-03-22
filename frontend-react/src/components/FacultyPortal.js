@@ -11,7 +11,7 @@ const FACULTY_PHOTOS = {
   stefan: 'https://res.cloudinary.com/dl6rcjggo/image/upload/v1773194125/faculty_stefan.jpg',
 };
 
-export default function FacultyPortal() {
+export default function FacultyPortal({ onBack }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [faculty, setFaculty] = useState('');
   const [status, setStatus] = useState(null);
@@ -46,134 +46,153 @@ export default function FacultyPortal() {
   };
 
   return (
-    <div className="panel panel-right">
-      <div className="panel-header">
-        <div className="panel-icon faculty">👩‍🏫</div>
-        <h2>Faculty Portal</h2>
-        <p>Monitor election results</p>
-      </div>
-
-      {!loggedIn && (
-        <div className="card">
-          {status && <div className={`status-msg status-${status.type}`}>{status.msg}</div>}
-
-          {faculty && FACULTY_PHOTOS[faculty] && (
-            <div className="faculty-photo">
-              <img src={FACULTY_PHOTOS[faculty]} alt={faculty} />
-              <p style={{fontSize:'0.8rem',color:'#8b1a4a',marginTop:'8px',fontWeight:600}}>
-                Prof. {faculty.charAt(0).toUpperCase() + faculty.slice(1)}
-              </p>
-            </div>
-          )}
-
-          <label className="input-label">👤 Faculty Name</label>
-          <select className="faculty-select" value={faculty} onChange={e => setFaculty(e.target.value)}>
-            <option value="">-- Select Faculty --</option>
-            <option value="wanda">Prof. Wanda</option>
-            <option value="elena">Prof. Elena</option>
-            <option value="sage">Prof. Sage</option>
-            <option value="stefan">Prof. Stefan</option>
-          </select>
-
-          <p style={{fontSize:'0.78rem',color:'#b06080',marginBottom:'14px',textAlign:'center'}}>
-            Verify your identity to access results
-          </p>
-
-          {!scanning ? (
-            <>
-              <button className="bio-btn btn-finger" onClick={startBiometric}>
-                👆 Fingerprint Verification <span style={{fontSize:'0.75rem',opacity:0.8}}>(Android)</span>
-              </button>
-              <div className="or-div">or</div>
-              <button className="bio-btn btn-face" onClick={startBiometric}>
-                🔍 Face ID Verification <span style={{fontSize:'0.75rem',opacity:0.8}}>(iPhone)</span>
-              </button>
-            </>
-          ) : (
-            <div className="scanning">
-              <div className="scan-ring">🔍</div>
-              <p style={{color:'#b06080',fontSize:'0.85rem'}}>Verifying identity...</p>
-            </div>
-          )}
+    <div className="app">
+      <header className="header">
+        <div className="header-logo">
+          <button className="back-btn" onClick={onBack}>← Back</button>
+          <div className="uni-seal">🎓</div>
+          <div className="header-title">
+            <h1>AMU University</h1>
+            <p>Bio-Vote Election System 2024</p>
+          </div>
         </div>
-      )}
+        <div className="header-badge">
+          <div className="live-dot"></div>
+          Election Live
+        </div>
+      </header>
 
-      {loggedIn && results && (
-        <div className="card" style={{width:'100%',maxWidth:'420px'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
-            <div>
-              <h3 style={{fontFamily:'Playfair Display,serif',color:'#8b1a4a'}}>Live Results</h3>
-              <p style={{fontSize:'0.75rem',color:'#b06080'}}>
-                Welcome, Prof. {faculty.charAt(0).toUpperCase() + faculty.slice(1)}
-              </p>
-            </div>
-            <button className="refresh-btn" onClick={fetchResults}>🔄 Refresh</button>
+      <div className="main">
+        <div className="panel">
+          <div className="panel-header">
+            <div className="panel-icon faculty">👩‍🏫</div>
+            <h2>Faculty Portal</h2>
+            <p>Monitor election results</p>
           </div>
 
-          <div className="stats-row">
-            <div className="stat-card">
-              <div className="stat-number">{results.totalVoted}</div>
-              <div className="stat-label">Total Votes</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-number">250</div>
-              <div className="stat-label">Eligible Voters</div>
-            </div>
-          </div>
+          {!loggedIn && (
+            <div className="card">
+              {status && <div className={`status-msg status-${status.type}`}>{status.msg}</div>}
 
-          {results.totalVotes > 0 && results.winner && (
-            <div className="winner-banner">
-              <div style={{fontSize:'2rem',marginBottom:'8px'}}>🏆</div>
-              <h3 style={{fontFamily:'Playfair Display,serif'}}>{results.winner}</h3>
-              <p style={{opacity:0.9}}>{results.outcome}</p>
-            </div>
-          )}
-
-          {results.totalVotes > 0 && !results.winner && (
-            <div className="tie-banner">
-              <div style={{fontSize:'2rem',marginBottom:'8px'}}>⚠️</div>
-              <h3>Nobody Won — Voting Tie!</h3>
-              <p>Please conduct a re-vote</p>
-            </div>
-          )}
-
-          <p style={{fontSize:'0.75rem',color:'#b06080',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'14px',fontWeight:600}}>
-            Vote Distribution
-          </p>
-
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={results.results} margin={{top:5,right:10,left:-20,bottom:5}}>
-              <XAxis dataKey="name" tick={{fontSize:9}} />
-              <YAxis tick={{fontSize:10}} />
-              <Tooltip />
-              <Bar dataKey="votes" fill="#ff6b9d" radius={[6,6,0,0]} />
-            </BarChart>
-          </ResponsiveContainer>
-
-          <div style={{marginTop:'16px'}}>
-            {results.results.map(c => {
-              const pct = results.totalVotes > 0 ? Math.round((c.votes/results.totalVotes)*100) : 0;
-              const maxV = Math.max(...results.results.map(r => r.votes), 1);
-              const isWinner = results.winner === c.name;
-              return (
-                <div key={c.candidateID} className="bar-item">
-                  <div className="bar-label">
-                    <span style={{fontWeight:600,color:'#3d0a20'}}>{isWinner ? '🏆 ' : ''}{c.name}</span>
-                    <span style={{color:'#ff6b9d',fontWeight:700}}>{c.votes} ({pct}%)</span>
-                  </div>
-                  <div className="bar-track">
-                    <div className={`bar-fill ${isWinner ? 'winner' : ''}`} style={{width:`${(c.votes/maxV)*100}%`}}></div>
-                  </div>
+              {faculty && FACULTY_PHOTOS[faculty] && (
+                <div className="faculty-photo">
+                  <img src={FACULTY_PHOTOS[faculty]} alt={faculty} />
+                  <p style={{ fontSize: '0.8rem', color: '#8b1a4a', marginTop: '8px', fontWeight: 600 }}>
+                    Prof. {faculty.charAt(0).toUpperCase() + faculty.slice(1)}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
+              )}
 
-          <div style={{marginTop:'16px',padding:'12px',background:'rgba(255,107,157,0.05)',borderRadius:'10px',border:'1px dashed rgba(255,107,157,0.3)',textAlign:'center'}}>
-            <p style={{fontSize:'0.75rem',color:'#b06080'}}>🔒 Results are encrypted & tamper-proof</p>
-          </div>
+              <label className="input-label">👤 Faculty Name</label>
+              <select className="faculty-select" value={faculty} onChange={e => setFaculty(e.target.value)}>
+                <option value="">-- Select Faculty --</option>
+                <option value="wanda">Prof. Wanda</option>
+                <option value="elena">Prof. Elena</option>
+                <option value="sage">Prof. Sage</option>
+                <option value="stefan">Prof. Stefan</option>
+              </select>
+
+              <p style={{ fontSize: '0.78rem', color: '#b06080', marginBottom: '14px', textAlign: 'center' }}>
+                Verify your identity to access results
+              </p>
+
+              {!scanning ? (
+                <>
+                  <button className="bio-btn btn-finger" onClick={startBiometric}>
+                    👆 Fingerprint Verification <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>(Android)</span>
+                  </button>
+                  <div className="or-div">or</div>
+                  <button className="bio-btn btn-face" onClick={startBiometric}>
+                    🔍 Face ID Verification <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>(iPhone)</span>
+                  </button>
+                </>
+              ) : (
+                <div className="scanning">
+                  <div className="scan-ring">🔍</div>
+                  <p style={{ color: '#b06080', fontSize: '0.85rem' }}>Verifying identity...</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {loggedIn && results && (
+            <div className="card" style={{ width: '100%', maxWidth: '420px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ fontFamily: 'Playfair Display,serif', color: '#8b1a4a' }}>Live Results</h3>
+                  <p style={{ fontSize: '0.75rem', color: '#b06080' }}>
+                    Welcome, Prof. {faculty.charAt(0).toUpperCase() + faculty.slice(1)}
+                  </p>
+                </div>
+                <button className="refresh-btn" onClick={fetchResults}>🔄 Refresh</button>
+              </div>
+
+              <div className="stats-row">
+                <div className="stat-card">
+                  <div className="stat-number">{results.totalVoted}</div>
+                  <div className="stat-label">Total Votes</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-number">250</div>
+                  <div className="stat-label">Eligible Voters</div>
+                </div>
+              </div>
+
+              {results.totalVotes > 0 && results.winner && (
+                <div className="winner-banner">
+                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🏆</div>
+                  <h3 style={{ fontFamily: 'Playfair Display,serif' }}>{results.winner}</h3>
+                  <p style={{ opacity: 0.9 }}>{results.outcome}</p>
+                </div>
+              )}
+
+              {results.totalVotes > 0 && !results.winner && (
+                <div className="tie-banner">
+                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>⚠️</div>
+                  <h3>Nobody Won — Voting Tie!</h3>
+                  <p>Please conduct a re-vote</p>
+                </div>
+              )}
+
+              <p style={{ fontSize: '0.75rem', color: '#b06080', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px', fontWeight: 600 }}>
+                Vote Distribution
+              </p>
+
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={results.results} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 9 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Bar dataKey="votes" fill="#ff6b9d" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+
+              <div style={{ marginTop: '16px' }}>
+                {results.results.map(c => {
+                  const pct = results.totalVotes > 0 ? Math.round((c.votes / results.totalVotes) * 100) : 0;
+                  const maxV = Math.max(...results.results.map(r => r.votes), 1);
+                  const isWinner = results.winner === c.name;
+                  return (
+                    <div key={c.candidateID} className="bar-item">
+                      <div className="bar-label">
+                        <span style={{ fontWeight: 600, color: '#3d0a20' }}>{isWinner ? '🏆 ' : ''}{c.name}</span>
+                        <span style={{ color: '#ff6b9d', fontWeight: 700 }}>{c.votes} ({pct}%)</span>
+                      </div>
+                      <div className="bar-track">
+                        <div className={`bar-fill ${isWinner ? 'winner' : ''}`} style={{ width: `${(c.votes / maxV) * 100}%` }}></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(255,107,157,0.05)', borderRadius: '10px', border: '1px dashed rgba(255,107,157,0.3)', textAlign: 'center' }}>
+                <p style={{ fontSize: '0.75rem', color: '#b06080' }}>🔒 Results are encrypted & tamper-proof</p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
