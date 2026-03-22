@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // ── WebAuthn utility — per UID fingerprint enrollment + verification ──────────
 
 const CRED_PREFIX = 'biovote_cred_';
@@ -10,14 +11,13 @@ export async function isEnrolled(uid) {
   return !!localStorage.getItem(getCredKey(uid));
 }
 
-// Enroll fingerprint for a specific UID
 export async function enrollFingerprint(uid) {
   if (!window.PublicKeyCredential) throw new Error('WebAuthn not supported. Use Chrome, Safari or Edge.');
 
-  const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
   if (!available) throw new Error('No biometric sensor found on this device.');
 
-  const challenge = crypto.getRandomValues(new Uint8Array(32));
+  const challenge = window.crypto.getRandomValues(new Uint8Array(32));
 
   const credential = await navigator.credentials.create({
     publicKey: {
@@ -42,20 +42,18 @@ export async function enrollFingerprint(uid) {
     }
   });
 
-  // Store credential ID linked to this UID
   const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
   localStorage.setItem(getCredKey(uid), credId);
   return credential;
 }
 
-// Verify fingerprint for a specific UID
 export async function verifyFingerprint(uid) {
   if (!window.PublicKeyCredential) throw new Error('WebAuthn not supported. Use Chrome, Safari or Edge.');
 
   const storedCredId = localStorage.getItem(getCredKey(uid));
   if (!storedCredId) throw new Error('NOT_ENROLLED');
 
-  const challenge = crypto.getRandomValues(new Uint8Array(32));
+  const challenge = window.crypto.getRandomValues(new Uint8Array(32));
   const credIdBytes = Uint8Array.from(atob(storedCredId), c => c.charCodeAt(0));
 
   const assertion = await navigator.credentials.get({
@@ -76,7 +74,7 @@ export async function verifyFingerprint(uid) {
 }
 
 export function getWebAuthnErrorMessage(err) {
-  if (err.message === 'NOT_ENROLLED') return '❌ No fingerprint registered for this UID.';
+  if (err.message === 'NOT_ENROLLED') return '❌ No fingerprint registered for this UID. Please enroll first.';
   switch (err.name) {
     case 'NotAllowedError': return '❌ Biometric cancelled or timed out. Please try again.';
     case 'NotSupportedError': return '⚠️ Biometric not supported. Use Chrome, Safari or Edge.';
