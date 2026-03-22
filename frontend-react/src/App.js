@@ -1,18 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import StudentPortal from './components/StudentPortal';
 import FacultyPortal from './components/FacultyPortal';
+import Enroll from './components/Enroll';
 import './App.css';
 
-function App() {
-  const [portal, setPortal] = useState(null); // null | 'student' | 'faculty'
+function Home() {
+  const [portal, setPortal] = React.useState(null);
 
-  if (portal === 'student') {
-    return <StudentPortal onBack={() => setPortal(null)} />;
-  }
-
-  if (portal === 'faculty') {
-    return <FacultyPortal onBack={() => setPortal(null)} />;
-  }
+  if (portal === 'student') return <StudentPortal onBack={() => setPortal(null)} />;
+  if (portal === 'faculty') return <FacultyPortal onBack={() => setPortal(null)} />;
 
   return (
     <div className="app">
@@ -59,4 +56,13 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/enroll" element={<Enroll />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}

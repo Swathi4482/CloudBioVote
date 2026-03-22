@@ -552,6 +552,35 @@ body {
 }
 
 /* ── MISC ── */
+/* ── WEBAUTHN INFO ── */
+.webauthn-notice {
+  background: rgba(100,180,255,0.1);
+  border: 1px solid rgba(100,180,255,0.35);
+  color: #1a5c99;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.webauthn-info {
+  background: rgba(255,255,255,0.6);
+  border: 1px dashed rgba(255,150,180,0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.webauthn-info p {
+  font-size: 0.78rem;
+  color: #b06080;
+  line-height: 1.4;
+}
+
 .or-div { text-align: center; color: #b06080; font-size: 0.8rem; margin: 12px 0; }
 
 .student-info { text-align: center; margin-bottom: 20px; }
@@ -582,4 +611,50 @@ body {
   .header { padding: 16px 20px; }
   .portal-cards { flex-direction: column; align-items: center; }
   .landing-title { font-size: 1.6rem; }
+}
+
+/* ── BOOTH READY BADGE ── */
+.booth-ready-badge {
+  background: rgba(100,200,100,0.12);
+  border: 1px solid rgba(100,200,100,0.35);
+  color: #2d7a2d;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+/* ── WEBAUTHN NOTICE ── */
+.webauthn-notice {
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.webauthn-notice.success { background: rgba(100,200,100,0.1); border: 1px solid rgba(100,200,100,0.3); color: #2d7a2d; }
+.webauthn-notice.warning { background: rgba(255,165,0,0.1); border: 1px solid rgba(255,165,0,0.3); color: #996600; }
+.webauthn-notice.info { background: rgba(100,180,255,0.1); border: 1px solid rgba(100,180,255,0.3); color: #1a5c99; }
+
+/* ── WEBAUTHN INFO BOX ── */
+.webauthn-info {
+  background: rgba(255,255,255,0.6);
+  border: 1px dashed rgba(255,150,180,0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.webauthn-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #b06080;
+  line-height: 1.4;
 }
