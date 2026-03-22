@@ -1,6 +1,4 @@
 /* eslint-disable no-undef */
-// ── WebAuthn utility — per UID fingerprint enrollment + verification ──────────
-
 const CRED_PREFIX = 'biovote_cred_';
 
 function getCredKey(uid) {
@@ -11,11 +9,12 @@ export async function isEnrolled(uid) {
   return !!localStorage.getItem(getCredKey(uid));
 }
 
-export async function hasбиometricSensor() {
+export async function hasBiometricSensor() {
   if (!window.PublicKeyCredential) return false;
   return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
 }
 
+// Enroll — forces cross-device (QR) by setting transport to hybrid
 export async function enrollFingerprint(uid) {
   if (!window.PublicKeyCredential) throw new Error('WebAuthn not supported. Use Chrome, Safari or Edge.');
 
@@ -35,9 +34,10 @@ export async function enrollFingerprint(uid) {
         { type: 'public-key', alg: -257 },
       ],
       authenticatorSelection: {
-        // No authenticatorAttachment restriction — allows both platform AND cross-device (QR)
+        authenticatorAttachment: 'cross-platform', // forces QR code flow
         userVerification: 'required',
-        requireResidentKey: false,
+        requireResidentKey: true,
+        residentKey: 'required',
       },
       timeout: 120000,
       attestation: 'none',
@@ -49,6 +49,7 @@ export async function enrollFingerprint(uid) {
   return credential;
 }
 
+// Verify — uses hybrid transport to trigger QR
 export async function verifyFingerprint(uid) {
   if (!window.PublicKeyCredential) throw new Error('WebAuthn not supported. Use Chrome, Safari or Edge.');
 
@@ -67,7 +68,7 @@ export async function verifyFingerprint(uid) {
       allowCredentials: [{
         type: 'public-key',
         id: credIdBytes,
-        transports: ['internal', 'hybrid'], // hybrid = cross-device via QR
+        transports: ['hybrid', 'internal'], // hybrid = QR code cross device
       }],
     }
   });
