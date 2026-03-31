@@ -8,8 +8,17 @@ import './App.css';
 function Home() {
   const [portal, setPortal] = React.useState(null);
 
-  if (portal === 'student') return <StudentPortal onBack={() => setPortal(null)} />;
-  if (portal === 'faculty') return <FacultyPortal onBack={() => setPortal(null)} />;
+  if (portal === 'student') return (
+    <div className="single-portal">
+      <StudentPortal onBack={() => setPortal(null)} />
+    </div>
+  );
+
+  if (portal === 'faculty') return (
+    <div className="single-portal">
+      <FacultyPortal onBack={() => setPortal(null)} />
+    </div>
+  );
 
   return (
     <div className="app">
