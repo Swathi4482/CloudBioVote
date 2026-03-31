@@ -25,30 +25,6 @@ function isValidUID(uid) {
   return ranges.some(([min, max]) => num >= min && num <= max);
 }
 
-function getDeviceInfo() {
-  const ua = navigator.userAgent;
-  const isIphone = /iPhone|iPad/.test(ua);
-  const isAndroid = /Android/.test(ua);
-  const isMac = /Mac/.test(ua) && !isIphone;
-
-  if (isIphone) return {
-    finger: { icon: '👆', label: 'Touch ID', desc: 'Use your iPhone Touch ID' },
-    face: { icon: '🔍', label: 'Face ID', desc: 'Use your iPhone Face ID' }
-  };
-  if (isAndroid) return {
-    finger: { icon: '👆', label: 'Fingerprint', desc: 'Use your Android fingerprint sensor' },
-    face: { icon: '🔍', label: 'Face Unlock', desc: 'Use your Android face unlock' }
-  };
-  if (isMac) return {
-    finger: { icon: '👆', label: 'Touch ID', desc: 'Use your Mac Touch ID' },
-    face: { icon: '🔍', label: 'Face ID', desc: 'Use your Mac Face ID' }
-  };
-  return {
-    finger: { icon: '👆', label: 'Windows Hello', desc: 'Use PIN or fingerprint scanner' },
-    face: { icon: '🔍', label: 'Windows Hello Face', desc: 'Use webcam face recognition' }
-  };
-}
-
 export default function StudentPortal({ onBack }) {
   const [step, setStep] = useState(1);
   const [uid, setUid] = useState('');
@@ -59,16 +35,28 @@ export default function StudentPortal({ onBack }) {
   const [selected, setSelected] = useState(null);
   const [receipt, setReceipt] = useState('');
   const [votedFor, setVotedFor] = useState('');
-  const [confirmed, setConfirmed] = useState(false);
-
-  const deviceInfo = getDeviceInfo();
 
   const startBiometric = async (type) => {
-    if (!uid) { setStatus({ msg: '⚠️ Please enter your Student UID', type: 'error' }); return; }
-    if (!isValidUID(uid)) { setStatus({ msg: '❌ Invalid UID. Only registered AMU students can vote.', type: 'error' }); return; }
+    if (!uid) {
+      setStatus({ msg: '⚠️ Please enter your Student UID', type: 'error' });
+      return;
+    }
+    if (!isValidUID(uid)) {
+      setStatus({ msg: '❌ Invalid UID. Only registered AMU students can vote.', type: 'error' });
+      return;
+    }
+
+    if (!window.PublicKeyCredential) {
+      setStatus({
+        msg: '❌ Your device does not support biometric. Please use your smartphone or a device with fingerprint/face sensor.',
+        type: 'error'
+      });
+      return;
+    }
+
     setStatus(null);
-    setScanning(true);
     setScanType(type);
+    setScanning(true);
 
     setTimeout(async () => {
       try {
@@ -99,7 +87,10 @@ export default function StudentPortal({ onBack }) {
   };
 
   const castVote = async () => {
-    if (!selected) { setStatus({ msg: '⚠️ Please select a candidate', type: 'error' }); return; }
+    if (!selected) {
+      setStatus({ msg: '⚠️ Please select a candidate', type: 'error' });
+      return;
+    }
     try {
       const res = await axios.post(`${BACKEND}/votes/cast`, {
         studentID: studentData.studentID, candidateID: selected
@@ -109,7 +100,7 @@ export default function StudentPortal({ onBack }) {
       setStep(4);
     } catch (err) {
       if (err.response?.status === 403) {
-        setStatus({ msg: '🚫 You have already voted!', type: 'warning' });
+        setStep(5);
       } else {
         setStatus({ msg: '❌ Error casting vote. Try again.', type: 'error' });
       }
@@ -147,16 +138,16 @@ export default function StudentPortal({ onBack }) {
                 Choose your verification method
               </p>
               <button className="bio-btn btn-finger" onClick={() => startBiometric('fingerprint')}>
-                {deviceInfo.finger.icon} {deviceInfo.finger.label}
+                👆 Fingerprint / Touch ID
                 <span style={{fontSize:'0.72rem',opacity:0.8,display:'block',marginTop:'2px'}}>
-                  {deviceInfo.finger.desc}
+                  Android • iPhone • Mac • Laptop scanner
                 </span>
               </button>
               <div className="or-div">or</div>
               <button className="bio-btn btn-face" onClick={() => startBiometric('faceid')}>
-                {deviceInfo.face.icon} {deviceInfo.face.label}
+                🔍 Face ID / Face Unlock
                 <span style={{fontSize:'0.72rem',opacity:0.8,display:'block',marginTop:'2px'}}>
-                  {deviceInfo.face.desc}
+                  iPhone • Android • Windows Hello • Mac
                 </span>
               </button>
             </>
@@ -167,7 +158,7 @@ export default function StudentPortal({ onBack }) {
               </div>
               <p style={{color:'#b06080',fontSize:'0.85rem'}}>
                 {scanType === 'fingerprint'
-                  ? 'Scanning... Please hold still'
+                  ? 'Scanning fingerprint... Please hold still'
                   : 'Scanning face... Look at camera'}
               </p>
             </div>
@@ -288,7 +279,7 @@ export default function StudentPortal({ onBack }) {
               <strong style={{color:'#8b1a4a'}}>{votedFor}</strong>{' '}
               has been securely recorded.<br /><br />
               <strong>You cannot vote again.</strong><br /><br />
-              Thank you for participating! 💕
+              Thank you for participating in the AMU University Student Council Election 2024! 💕
             </div>
             <div className="receipt-box">
               <p>🔐 Your vote is encrypted and secured</p>
@@ -298,7 +289,7 @@ export default function StudentPortal({ onBack }) {
         </div>
       )}
 
-      {/* ALREADY VOTED FULL PAGE */}
+      {/* STEP 5 — ALREADY VOTED */}
       {step === 5 && (
         <div className="card" style={{textAlign:'center',padding:'40px 20px'}}>
           <div style={{fontSize:'4rem',marginBottom:'16px'}}>🚫</div>
@@ -312,6 +303,13 @@ export default function StudentPortal({ onBack }) {
             You have already cast your vote.<br/>
             Each student can only vote once.
           </p>
+          <button onClick={() => { setStep(1); setUid(''); setSelected(null); }} style={{
+            marginTop:'20px',padding:'12px 24px',borderRadius:'12px',
+            border:'2px solid rgba(255,107,157,0.3)',background:'transparent',
+            color:'#b06080',fontSize:'0.9rem',fontWeight:600,cursor:'pointer'
+          }}>
+            ← Go Back
+          </button>
         </div>
       )}
     </div>
