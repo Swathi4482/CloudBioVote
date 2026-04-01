@@ -45,7 +45,6 @@ export default function StudentPortal({ onBack }) {
       setStatus({ msg: '❌ Invalid UID. Only registered AMU students can vote.', type: 'error' });
       return;
     }
-
     if (!window.PublicKeyCredential) {
       setStatus({
         msg: '❌ Your device does not support biometric. Please use your smartphone or a device with fingerprint/face sensor.',
@@ -53,7 +52,6 @@ export default function StudentPortal({ onBack }) {
       });
       return;
     }
-
     setStatus(null);
     setScanType(type);
     setScanning(true);
@@ -76,7 +74,7 @@ export default function StudentPortal({ onBack }) {
       } catch (err) {
         setScanning(false);
         if (err.response?.status === 403) {
-          setStatus({ msg: '🚫 You have already voted!', type: 'warning' });
+          setStep(5);
         } else if (err.response?.status === 404) {
           setStatus({ msg: '❌ Student not registered.', type: 'error' });
         } else {
@@ -293,15 +291,26 @@ export default function StudentPortal({ onBack }) {
       {step === 5 && (
         <div className="card" style={{textAlign:'center',padding:'40px 20px'}}>
           <div style={{fontSize:'4rem',marginBottom:'16px'}}>🚫</div>
-          <h2 style={{fontFamily:'Playfair Display,serif',color:'#cc0047',marginBottom:'8px'}}>
+          <h2 style={{
+            fontFamily:'Playfair Display,serif',
+            color:'#cc0047',
+            marginBottom:'8px',
+            fontSize:'2rem'
+          }}>
             Not Again Dude!
           </h2>
-          <p style={{color:'#b06080',fontSize:'1rem',fontWeight:600}}>
-            Already Voted!
+          <p style={{
+            color:'#cc0047',
+            fontSize:'1.2rem',
+            fontWeight:700,
+            marginTop:'8px'
+          }}>
+            Already Voted! 🗳️
           </p>
-          <p style={{color:'#b06080',fontSize:'0.85rem',marginTop:'12px'}}>
+          <p style={{color:'#b06080',fontSize:'0.85rem',marginTop:'12px',lineHeight:1.6}}>
             You have already cast your vote.<br/>
-            Each student can only vote once.
+            Each student can only vote once.<br/>
+            Your vote has been recorded securely.
           </p>
           <button onClick={() => { setStep(1); setUid(''); setSelected(null); }} style={{
             marginTop:'20px',padding:'12px 24px',borderRadius:'12px',
