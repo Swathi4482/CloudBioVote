@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
-import { enrollFingerprint, verifyFingerprint, isEnrolled, getWebAuthnErrorMessage } from './webauthn';
+/* eslint-disable */
+
 
 const BACKEND = 'https://cloudbiovote-api.onrender.com';
 
