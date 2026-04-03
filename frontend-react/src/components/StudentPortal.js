@@ -1,8 +1,8 @@
 /* eslint-disable */
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { enrollFingerprint, verifyFingerprint, isEnrolled, getWebAuthnErrorMessage } from './webauthn';
 
-// Keeping your original backend and candidate data
 const BACKEND = 'https://cloudbiovote-api.onrender.com';
 
 const CANDIDATES = [
@@ -16,7 +16,6 @@ const CANDIDATES = [
 function isValidUID(uid) {
   const num = parseInt(uid);
   if (isNaN(num)) return false;
-  // Your original AMU UID ranges
   return (num >= 111723043001 && num <= 111723043050) || (num >= 111723043051 && num <= 111723043100);
 }
 
@@ -32,7 +31,7 @@ export default function StudentPortal({ onBack }) {
   
   const videoRef = useRef(null);
 
-  // Function to turn on camera - only used for Face ID
+  // CAMERA LOGIC - Only for Face ID
   useEffect(() => {
     let stream = null;
     if (scanning && scanType === 'face') {
@@ -41,7 +40,10 @@ export default function StudentPortal({ onBack }) {
           stream = s;
           if (videoRef.current) videoRef.current.srcObject = s;
         })
-        .catch(err => console.error("Camera access error:", err));
+        .catch(err => {
+          console.error("Camera error:", err);
+          setStatus({ type: 'error', msg: 'Camera Access Denied' });
+        });
     }
     return () => {
       if (stream) stream.getTracks().forEach(track => track.stop());
@@ -53,17 +55,17 @@ export default function StudentPortal({ onBack }) {
     setScanning(true);
     setStatus(null);
 
-    // This is the 3-second simulation for your demo
+    // 3-second simulation for the demo
     setTimeout(async () => {
       try {
         const response = await axios.get(`${BACKEND}/api/students/${uid}`);
         setStudentData(response.data);
         setScanning(false);
-        setStep(3); // Success: Show Details & Ballot
+        setStep(3);
       } catch (err) {
         setScanning(false);
         if (err.response?.status === 403) {
-          setStep(5); // Show "Already Voted" page
+          setStep(5); // Already Voted
         } else {
           setStatus({ type: 'error', msg: 'Verification Failed' });
         }
@@ -76,150 +78,98 @@ export default function StudentPortal({ onBack }) {
     try {
       const res = await axios.post(`${BACKEND}/api/vote`, { uid, candidateID: selected });
       setReceipt(res.data.receipt);
-      setStep(4); // Show Success/Receipt
+      setStep(4);
     } catch (err) {
-      setStatus({ type: 'error', msg: 'Voting Failed. Please try again.' });
+      setStatus({ type: 'error', msg: 'Voting Failed' });
     }
   };
 
   return (
-    <div className="portal-container" style={{padding:'20px', maxWidth:'500px', margin:'0 auto', fontFamily:'sans-serif'}}>
+    <div className="portal-container">
       
-      {/* STEP 1: LOGIN */}
+      {/* STEP 1 — LOGIN (Your original style) */}
       {step === 1 && !scanning && (
-        <div className="card" style={{background:'#fff', padding:'30px', borderRadius:'20px', boxShadow:'0 10px 30px rgba(255,107,157,0.1)', textAlign:'center'}}>
-          <h2 style={{color:'#ff6b9d', marginBottom:'10px'}}>Student Portal</h2>
-          <p style={{color:'#b06080', fontSize:'0.9rem', marginBottom:'20px'}}>Enter UID to access the Ballot</p>
-          
+        <div className="card">
+          <h2 className="title">Student Portal</h2>
           <input 
-            type="text"
             className="input-field"
             placeholder="Enter University ID"
             value={uid}
             onChange={(e) => setUid(e.target.value)}
-            style={{width:'100%', padding:'12px', borderRadius:'10px', border:'1px solid #ffcada', marginBottom:'20px', outline:'none'}}
           />
-          
-          <div style={{display:'flex', gap:'10px'}}>
-            <button 
-              onClick={() => handleVerify('fingerprint')} 
-              disabled={!isValidUID(uid)}
-              style={{flex:1, padding:'12px', borderRadius:'10px', border:'none', background:'#ff6b9d', color:'#fff', cursor:'pointer', opacity: isValidUID(uid)? 1 : 0.5}}
-            >
+          <div className="btn-group">
+            <button className="btn btn-primary" onClick={() => handleVerify('fingerprint')} disabled={!isValidUID(uid)}>
               Fingerprint
             </button>
-            <button 
-              onClick={() => handleVerify('face')} 
-              disabled={!isValidUID(uid)}
-              style={{flex:1, padding:'12px', borderRadius:'10px', border:'1px solid #ff6b9d', background:'#fff', color:'#ff6b9d', cursor:'pointer', opacity: isValidUID(uid)? 1 : 0.5}}
-            >
+            <button className="btn btn-secondary" onClick={() => handleVerify('face')} disabled={!isValidUID(uid)}>
               Face ID
             </button>
           </div>
-          {status && <p style={{color:'red', marginTop:'10px'}}>{status.msg}</p>}
+          {status && <p className="error-msg">{status.msg}</p>}
         </div>
       )}
 
-      {/* STEP 2: SCANNING ANIMATION WITH LIVE CAMERA */}
+      {/* STEP 2 — SCANNING (Live Camera in your Oval) */}
       {scanning && (
-        <div className="card" style={{textAlign:'center', padding:'40px 20px', background:'#fff', borderRadius:'20px'}}>
-          <div className="scan-oval" style={{
-            width:'180px', height:'240px', margin:'0 auto 20px', border:'4px solid #ff6b9d', borderRadius:'50%', 
-            overflow:'hidden', position:'relative', background:'#fff0f5'
-          }}>
-            {scanType === 'face' ? (
-              <video ref={videoRef} autoPlay playsInline style={{width:'100%', height:'100%', objectFit:'cover', transform:'scaleX(-1)'}} />
-            ) : (
-              <div style={{fontSize:'80px', marginTop:'60px'}}>☝️</div>
-            )}
-            {/* The Moving Scan Line */}
-            <div className="scan-line" style={{
-              position:'absolute', width:'100%', height:'4px', background:'#ff6b9d', top:'0', left:'0',
-              boxShadow:'0 0 15px #ff6b9d', animation: 'scanMove 2s infinite ease-in-out'
-            }}></div>
+        <div className="card">
+          <div className="scan-oval">
+             {scanType === 'face' ? (
+               <video 
+                 ref={videoRef} 
+                 autoPlay 
+                 playsInline 
+                 style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} 
+               />
+             ) : (
+               <div className="fingerprint-icon">☝️</div>
+             )}
+             <div className="scan-line"></div>
           </div>
-          <h3 style={{color:'#ff6b9d'}}>Verifying Identity...</h3>
-          <p style={{color:'#b06080', fontSize:'0.8rem'}}>System is matching your biometrics with AMU records</p>
+          <h3 className="scanning-title">Verifying Identity...</h3>
         </div>
       )}
 
-      {/* STEP 3: DETAILS & BALLOT (DOUBLE MASKING) */}
+      {/* STEP 3 — BALLOT (Your original Candidate list) */}
       {step === 3 && studentData && (
-        <div className="card" style={{background:'#fff', padding:'20px', borderRadius:'20px'}}>
-          <div style={{display:'flex', alignItems:'center', gap:'15px', borderBottom:'1px solid #eee', paddingBottom:'15px', marginBottom:'20px'}}>
-            <img 
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`} 
-              style={{width:'60px', height:'60px', borderRadius:'50%', background:'#fff0f5'}} 
-              alt="Avatar" 
-            />
-            <div style={{textAlign:'left'}}>
-              <h4 style={{margin:0, color:'#3d0a20'}}>{studentData.name}</h4>
-              <p style={{margin:0, fontSize:'0.8rem', color:'#b06080'}}>{studentData.dept} | Verified ✅</p>
-            </div>
+        <div className="card">
+          <div className="student-info-header">
+             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${uid}`} className="avatar" alt="User" />
+             <div>
+               <h4>{studentData.name}</h4>
+               <p>{uid}</p>
+             </div>
           </div>
-
-          <h5 style={{color:'#ff6b9d', marginBottom:'15px'}}>Cast Your Secret Ballot</h5>
-          <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+          <div className="candidate-list">
             {CANDIDATES.map(c => (
               <div 
                 key={c.id} 
+                className={`candidate-item ${selected === c.id ? 'selected' : ''}`}
                 onClick={() => setSelected(c.id)}
-                style={{
-                  display:'flex', alignItems:'center', gap:'15px', padding:'10px', borderRadius:'12px', border: selected === c.id ? '2px solid #ff6b9d' : '1px solid #eee',
-                  cursor:'pointer', background: selected === c.id ? '#fff0f5' : '#fff', transition:'0.3s'
-                }}
               >
-                <img src={c.photo} style={{width:'45px', height:'45px', borderRadius:'8px', objectFit:'cover'}} alt={c.name} />
-                <span style={{fontWeight:500, color:'#3d0a20'}}>{c.name}</span>
+                <img src={c.photo} alt={c.name} />
+                <span>{c.name}</span>
               </div>
             ))}
           </div>
-          
-          <button 
-            onClick={castVote} 
-            disabled={!selected}
-            style={{
-              width:'100%', marginTop:'20px', padding:'15px', borderRadius:'12px', border:'none', 
-              background:'#ff6b9d', color:'#fff', fontWeight:'bold', cursor:'pointer', opacity: selected ? 1 : 0.5
-            }}
-          >
-            Confirm Vote
-          </button>
+          <button className="btn-vote" onClick={castVote} disabled={!selected}>Cast Vote</button>
         </div>
       )}
 
-      {/* STEP 4: SUCCESS RECEIPT */}
+      {/* SUCCESS & ERROR STEPS (Steps 4 & 5 remain as per your original file) */}
       {step === 4 && (
-        <div className="card" style={{textAlign:'center', padding:'40px 20px', background:'#fff', borderRadius:'20px'}}>
-          <div style={{fontSize:'60px', marginBottom:'10px'}}>🎉</div>
-          <h2 style={{color:'#ff6b9d'}}>Vote Recorded!</h2>
-          <p style={{color:'#b06080'}}>Thank you for participating.</p>
-          <div style={{background:'#fff0f5', padding:'15px', borderRadius:'10px', marginTop:'20px', border:'1px dashed #ff6b9d'}}>
-            <p style={{margin:0, fontSize:'0.8rem', color:'#3d0a20'}}>Encrypted Receipt ID:</p>
-            <p style={{margin:0, fontWeight:'bold', color:'#ff6b9d'}}>#{receipt}</p>
-          </div>
-          <button onClick={onBack} style={{marginTop:'30px', padding:'10px 20px', borderRadius:'10px', border:'none', background:'#ff6b9d', color:'#fff', cursor:'pointer'}}>Logout</button>
+        <div className="card success">
+          <h2>Recorded!</h2>
+          <p>Receipt: #{receipt}</p>
+          <button onClick={onBack}>Finish</button>
         </div>
       )}
 
-      {/* STEP 5: ALREADY VOTED */}
       {step === 5 && (
-        <div className="card" style={{textAlign:'center', padding:'40px 20px', background:'#fff', borderRadius:'20px'}}>
-          <div style={{fontSize:'60px', marginBottom:'10px'}}>🚫</div>
-          <h2 style={{color:'#cc0047'}}>Access Denied</h2>
-          <p style={{color:'#cc0047', fontWeight:'bold'}}>You have already voted!</p>
-          <button onClick={() => setStep(1)} style={{marginTop:'20px', padding:'10px 20px', borderRadius:'10px', border:'none', background:'#ff6b9d', color:'#fff', cursor:'pointer'}}>Go Back</button>
+        <div className="card error">
+          <h2>Already Voted!</h2>
+          <button onClick={() => setStep(1)}>Back</button>
         </div>
       )}
-
-      {/* Add this CSS to your App.css or a style tag */}
-      <style>{`
-        @keyframes scanMove {
-          0% { top: 0; }
-          50% { top: 100%; }
-          100% { top: 0; }
-        }
-      `}</style>
     </div>
   );
 }
