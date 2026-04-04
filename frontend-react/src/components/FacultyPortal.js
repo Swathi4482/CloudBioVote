@@ -16,37 +16,46 @@ const FACULTY_PHOTOS = {
 // Camera Face ID Component
 function CameraFaceID({ onVerified, onCancel }) {
   const videoRef = useRef(null);
-  const [stream, setStream] = useState(null);
+  const streamRef = useRef(null); // FIX: use ref so stream persists across renders
   const [status, setStatus] = useState('requesting');
   const [countdown, setCountdown] = useState(null);
 
   useEffect(() => {
-    startCamera();
-    return () => stopCamera();
+    let mounted = true;
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+      .then((mediaStream) => {
+        if (!mounted) { mediaStream.getTracks().forEach(t => t.stop()); return; }
+        streamRef.current = mediaStream;
+        // FIX: small delay ensures <video> element is in the DOM before setting srcObject
+        setTimeout(() => {
+          if (videoRef.current && mounted) {
+            videoRef.current.srcObject = mediaStream;
+            videoRef.current.play().catch(() => {});
+          }
+        }, 150);
+        setStatus('ready');
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setStatus('denied');
+        } else {
+          setStatus('error');
+        }
+      });
+    return () => {
+      mounted = false;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+    };
   }, []);
 
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
-      });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-      setStatus('ready');
-    } catch (err) {
-      if (err.name === 'NotAllowedError') {
-        setStatus('denied');
-      } else {
-        setStatus('error');
-      }
-    }
-  };
-
   const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
     }
   };
 
