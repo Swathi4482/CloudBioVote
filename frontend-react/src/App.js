@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import StudentPortal from './components/StudentPortal';
 import FacultyPortal from './components/FacultyPortal';
 import Enroll from './components/Enroll';
+import EnrollFaculty from './components/EnrollFaculty';
 import './App.css';
 
 function Home() {
@@ -71,6 +72,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/enroll" element={<Enroll />} />
+        <Route path="/enroll-faculty" element={<EnrollFaculty />} />
       </Routes>
     </BrowserRouter>
   );
