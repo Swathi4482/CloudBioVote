@@ -34,7 +34,7 @@ for dept in departments:
     for i in range(1, 51):  # 001 to 050
         uid = f"{dept['prefix']}{i:03d}"
         name = f"{first_names[i-1]} {last_names[i-1]}"
-        email = f"{first_names[i-1].lower()}.{uid[-3:]}@amu.edu"
+        email = f"{first_names[i-1].lower()}.{uid[-3:]}@loyola.edu"
         bio_id = f"BIO{dept['prefix'][-3:]}{i:03d}"
 
         student = {
