@@ -27,7 +27,7 @@ function Home() {
         <div className="header-logo">
           <div className="uni-seal">🎓</div>
           <div className="header-title">
-            <h1>AMU University</h1>
+            <h1>Loyola Academy</h1>
             <p>Bio-Vote Election System 2026</p>
           </div>
         </div>
@@ -41,7 +41,7 @@ function Home() {
         <div className="landing-hero">
           <div className="landing-icon">🗳️</div>
           <h2 className="landing-title">Welcome to Cloud Bio-Vote</h2>
-          <p className="landing-sub">Secure biometric voting for AMU Student Council Election 2026</p>
+          <p className="landing-sub">Secure biometric voting for Loyola Academy Student Council Election 2026</p>
         </div>
 
         <div className="portal-cards">
