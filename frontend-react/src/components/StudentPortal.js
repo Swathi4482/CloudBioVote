@@ -438,7 +438,7 @@ export default function StudentPortal({ onBack }) {
             <div style={{background:'white',borderRadius:'10px',padding:'10px',textAlign:'center',marginTop:'10px'}}>
               <p style={{fontSize:'0.65rem',color:'#b06080',textTransform:'uppercase',letterSpacing:'1px'}}>Email</p>
               <p style={{fontSize:'0.78rem',fontWeight:600,color:'#8b1a4a',marginTop:'2px'}}>
-                📧 {studentData.email || `${studentData.studentID}@amu.edu`}
+                📧 {studentData.email || `${studentData.studentID}@loyola.edu`}
               </p>
             </div>
           </div>
@@ -509,7 +509,7 @@ export default function StudentPortal({ onBack }) {
               <strong style={{color:'#8b1a4a'}}>{votedFor}</strong>{' '}
               has been securely recorded.<br /><br />
               <strong>You cannot vote again.</strong><br /><br />
-              Thank you for participating in the AMU University Student Council Election 2024! 💕
+              Thank you for participating in the Loyola Academy Student Council Election 2026! 💕
             </div>
             <div className="receipt-box">
               <p>🔐 Your vote is encrypted and secured</p>
